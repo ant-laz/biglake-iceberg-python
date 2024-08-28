@@ -21,6 +21,19 @@ and tech stack.
 
 ## Approach A : BQ Stored Procedures + BigLake Metastore + Spark + Iceberg
 
+### Approach A  - Overview
+
+![approach_a_architecture](images/a_architecture.png)
+
+1. A GCS bucket where we land our raw data, e.g. Parquet files 
+2. A Cloud Resource BigQuery connection that delegates creating BigLake tables to #3
+3. A Spark BigQuery connection that is the main driver of Lakehouse creation
+4. A BigQuery Spark Stored Procedure that has the PySpark code to create our Lakehouse
+5. A Dataproc serverless cluster that executes the store procedure #4
+6. A GCS bucket which has the files of our Lakehouse (metadata + data files)
+7. A BigLake Metastore which acts as our Iceberg catalog, mapping table IDs to metadat pointers
+8. BigLake tables, automatically created at the same time as (& kept in sync with) Iceberg tables
+
 ### Approach A  - step 1 of 4 - Initial setup
 
 Based on the instructions [here](https://youtu.be/IQR9gJuLXbQ?feature=shared) & 
