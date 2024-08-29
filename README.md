@@ -424,7 +424,7 @@ gcloud dataproc batches submit pyspark pyspark_jobs/iceberg_table_creation.py \
 ```
 
 
-Explaining the spark properties in `CONFS`
+**Explaining the spark properties in `CONFS`**
 
 | Spark Property  | Value | Explanation |
 | ------------- | ------------- | ------------- |
@@ -434,17 +434,18 @@ Explaining the spark properties in `CONFS`
 | spark.sql.catalog.`${ICEBERG_CATALOG_NAME}`.gcp_location  | `${BIGQUERY_LOCATION}`  |Required by the custom iceberg catalog implementation org.apache.iceberg.gcp.biglake.BigLakeCatalog. Within GCP project, the GCP location that contains the catalog  |
 | spark.sql.catalog.`${ICEBERG_CATALOG_NAME}`.blms_catalog  | `${ICEBERG_CATALOG_NAME}`  | Required by the custom iceberg catalog implementation org.apache.iceberg.gcp.biglake.BigLakeCatalog. The name of the BigLake Metastore catalog corresponding to this Iceberg Catalog.  |
 | spark.sql.catalog.`${ICEBERG_CATALOG_NAME}`.warehouse  | `${GCS_BUCKET_LAKEHOUSE}`  | Warehouse location for the catalog to store data. This is a GCS bucket on Google Cloud. This single bucket will contain both the Iceberg metadata layer (metadata files, manifest list & manifest file) and the Iceberg data layer (Parquet files).   |
-| spark.jars.packages  | org.apache.iceberg:iceberg-spark-runtime-3.3_2.12:1.2.0  | Includes the  Iceberg classes that Spark needs to interact with Iceberg tables and metadata.  |
+| spark.jars.packages  | `${ICEBERG_SPARK_PACKAGE}`  | Includes the  Iceberg classes that Spark needs to interact with Iceberg tables and metadata.  |
 
-Explaining the the flags inputted into `gcloud dataproc batches submit pyspark`
+**Explaining the the flags inputted into `gcloud dataproc batches submit pyspark`**
 
 | Flag | Value | Meaning |
 | ------------- | ------------- | ------------- |
-| positional  | my-pyspark.py  | TODO  |
-| properties  | "${CONFS}"  | TODO  |
-| jars  | BIGLAKE_ICEBERG_CATALOG_JAR  | TODO  |
-| region  | 'us-central1'  | TODO  |
-| service-account  | ...  | TODO  |
+| positional  | pyspark_jobs/my-pyspark.py  | PySpark program to run  |
+| properties  | ${CONFS}  | Spark properties to configure Spark to use BigLake Metastore as an Iceberg catalog  |
+| jars  | ${BIGLAKE_ICEBERG_CATALOG_JAR}  | Custom Iceberg catalog implementation classes for BigLake Metastore  |
+| region  | ${DATA_PROC_REGION}  | GCP region for running Dataproc Severless  |
+| service-account  | ${SERVICE_ACCT_FULL}  | Service account to run Dataproc serverless job  |
+| deps-bucket  | ${GCS_BUCKET_DATAPROC_DEPS}  | Required is launch a local file  |
 | version | 2.2 | https://cloud.google.com/dataproc-serverless/docs/concepts/versions/dataproc-serverless-versions |
 | --  | ARG1 ARG2  | TODO   |
 
@@ -459,36 +460,118 @@ curl "https://biglake.googleapis.com/v1/projects/${PROJECT_ID}/locations/${BIGQU
   --header "Accept: application/json"
 ```
 
+cleaned up output
+```
+{
+  "catalogs": [
+    {
+      "name": "projects/${PROJECT_ID}/locations/${BIGQUERY_LOCATION}/catalogs/${ICEBERG_CATALOG_NAME}",
+      "createTime": "2024-08-29T19:59:18.939106Z",
+      "updateTime": "2024-08-29T19:59:18.939106Z"
+    }
+  ]
+}
+```
+
 List out databases in Catalog `${ICEBERG_CATALOG_NAME}`
 
 ```
-curl "https://biglake.googleapis.com/v1/projects/${PROJECT_ID}/locations/${BIGQUERY_LOCATION}/catalogs/${ICEBERG_CATALOG_NAME=}/databases" \
+curl "https://biglake.googleapis.com/v1/projects/${PROJECT_ID}/locations/${BIGQUERY_LOCATION}/catalogs/${ICEBERG_CATALOG_NAME}/databases" \
   --header "Authorization: Bearer $(gcloud auth application-default print-access-token)" \
   --header "Accept: application/json"
+```
+
+cleaned up output
+```
+{
+  "databases": [
+    {
+      "name": "projects/${PROJECT_ID}/locations/${BIGQUERY_LOCATION}/catalogs/${ICEBERG_CATALOG_NAME}/databases/${ICEBERG_NAMESPACE_NAME}",
+      "createTime": "2024-08-29T19:59:19.359421Z",
+      "updateTime": "2024-08-29T19:59:19.359421Z",
+      "type": "HIVE",
+      "hiveOptions": {
+        "locationUri": "gs://${GCS_BUCKET_LAKEHOUSE}/${ICEBERG_NAMESPACE_NAME}.db",
+        "parameters": {
+          "owner": "spark"
+        }
+      }
+    }
+  ]
+}
 ```
 
 List out tables in Catalog `${ICEBERG_CATALOG_NAME}` & database `${ICEBERG_NAMESPACE_NAME}`
 
 ```
-curl "https://biglake.googleapis.com/v1/projects/${PROJECT_ID}/locations/${BIGQUERY_LOCATION}/catalogs/${ICEBERG_CATALOG_NAME=}/databases/${ICEBERG_NAMESPACE_NAME}/tables" \
+curl "https://biglake.googleapis.com/v1/projects/${PROJECT_ID}/locations/${BIGQUERY_LOCATION}/catalogs/${ICEBERG_CATALOG_NAME}/databases/${ICEBERG_NAMESPACE_NAME}/tables" \
   --header "Authorization: Bearer $(gcloud auth application-default print-access-token)" \
   --header "Accept: application/json"
 ```
 
-### noted bugs
-
-https://cloud.google.com/bigquery/docs/manage-open-source-metadata
-
+cleaned up output
 ```
-export ICEBERG_SPARK_PACKAGE=org.apache.iceberg:iceberg-spark-runtime-3.3_2.13-1.2.1
-```
-
-is wrong
-
-should be 
-
-```
-org.apache.iceberg:iceberg-spark-runtime-3.3_2.12:1.2.0
+{
+  "tables": [
+    {
+      "name": "projects/${PROJECT_ID}/locations/${BIGQUERY_LOCATION}/catalogs/${ICEBERG_CATALOG_NAME}/databases/${ICEBERG_NAMESPACE_NAME}/tables/${ICEBERG_TABLE_NAME}"
+    }
+  ]
+}
 ```
 
-note ":" instread of "-"
+List out a specific table in Catalog `${ICEBERG_CATALOG_NAME}` 
+
+```
+curl "https://biglake.googleapis.com/v1/projects/${PROJECT_ID}/locations/${BIGQUERY_LOCATION}/catalogs/${ICEBERG_CATALOG_NAME}/databases/${ICEBERG_NAMESPACE_NAME}/tables/${ICEBERG_TABLE_NAME}" \
+  --header "Authorization: Bearer $(gcloud auth application-default print-access-token)" \
+  --header "Accept: application/json"
+```
+
+cleaned up output
+```
+{
+  "name": "projects/${PROJECT_ID}/locations/${BIGQUERY_LOCATION}/catalogs/${ICEBERG_CATALOG_NAME}/databases/${ICEBERG_NAMESPACE_NAME}/tables/${ICEBERG_TABLE_NAME}",
+  "createTime": "2024-08-29T19:59:20.897220Z",
+  "updateTime": "2024-08-29T19:59:35.420513Z",
+  "type": "HIVE",
+  "hiveOptions": {
+    "parameters": {
+      "bq_table": "${BIGQUERY_DATASET}.${BIGQUERY_TABLENAME}",
+      "uuid": "9f463d6f-...",
+      "previous_metadata_location": "gs://${GCS_BUCKET_LAKEHOUSE}/${ICEBERG_NAMESPACE_NAME}.db/${ICEBERG_TABLE_NAME}/metadata/9d2e8a38-....metadata.json",
+      "owner": "spark",
+      "EXTERNAL": "TRUE",
+      "numRows": "32",
+      "bq_connection": "zaro-joonix-net-prj-data-batch.US.biglake-connection",
+      "metadata_location": "gs://${GCS_BUCKET_LAKEHOUSE}/${ICEBERG_NAMESPACE_NAME}.db/${ICEBERG_TABLE_NAME}/metadata/579da4b2....metadata.json",
+      "table_type": "ICEBERG",
+      "totalSize": "4407",
+      "numFiles": "1"
+    },
+    "tableType": "EXTERNAL_TABLE",
+    "storageDescriptor": {
+      "locationUri": "gs://${GCS_BUCKET_LAKEHOUSE}/${ICEBERG_NAMESPACE_NAME}.db/cars",
+      "inputFormat": "org.apache.hadoop.mapred.FileInputFormat",
+      "outputFormat": "org.apache.hadoop.mapred.FileOutputFormat",
+      "serdeInfo": {
+        "serializationLib": "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe"
+      }
+    }
+  },
+  "etag": "Waf..."
+}
+```
+
+Query the BigLake iceberg table using BIGQUERY
+```
+SELECT * FROM ${PROJECT_ID}.${BIGQUERY_DATASET}.${BIGQUERY_TABLENAME} LIMIT 10;"
+```
+
+### appendix :: manually deleting catalogs
+
+```
+curl -X DELETE "https://biglake.googleapis.com/v1/projects/${PROJECT_ID}/locations/${BIGQUERY_LOCATION}/catalogs/${ICEBERG_CATALOG_NAME}" \
+  --header "Authorization: Bearer $(gcloud auth application-default print-access-token)" \
+  --header "Accept: application/json"
+```
