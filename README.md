@@ -440,14 +440,14 @@ gcloud dataproc batches submit pyspark pyspark_jobs/iceberg_table_creation.py \
 
 | Flag | Value | Meaning |
 | ------------- | ------------- | ------------- |
-| positional  | pyspark_jobs/my-pyspark.py  | PySpark program to run  |
+| positional  | pyspark_jobs/iceberg_table_creation.py  | PySpark program to run  |
 | properties  | ${CONFS}  | Spark properties to configure Spark to use BigLake Metastore as an Iceberg catalog  |
 | jars  | ${BIGLAKE_ICEBERG_CATALOG_JAR}  | Custom Iceberg catalog implementation classes for BigLake Metastore  |
 | region  | ${DATA_PROC_REGION}  | GCP region for running Dataproc Severless  |
 | service-account  | ${SERVICE_ACCT_FULL}  | Service account to run Dataproc serverless job  |
 | deps-bucket  | ${GCS_BUCKET_DATAPROC_DEPS}  | Required is launch a local file  |
 | version | 2.2 | https://cloud.google.com/dataproc-serverless/docs/concepts/versions/dataproc-serverless-versions |
-| --  | ARG1 ARG2  | TODO   |
+| --  | ARG1 ARG2  | command line arguments to pass into our Spark program   |
 
 
 ### Approach B  - step 4 of 4 - Inspecting the Data lakehouse created
@@ -543,7 +543,7 @@ cleaned up output
       "owner": "spark",
       "EXTERNAL": "TRUE",
       "numRows": "32",
-      "bq_connection": "zaro-joonix-net-prj-data-batch.US.biglake-connection",
+      "bq_connection": "${PROJECT_ID}.${BIGQUERY_LOCATION}.${BIGQUERY_BIGLAKE_CONNECTION}",
       "metadata_location": "gs://${GCS_BUCKET_LAKEHOUSE}/${ICEBERG_NAMESPACE_NAME}.db/${ICEBERG_TABLE_NAME}/metadata/579da4b2....metadata.json",
       "table_type": "ICEBERG",
       "totalSize": "4407",

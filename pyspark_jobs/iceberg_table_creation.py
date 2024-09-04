@@ -41,16 +41,23 @@ def create_iceberg_tables(spark: SparkSession, args: dict):
     logger.info('Creating iceberg method called')
     logger.info('args supplied: {}'.format(args))
 
-    # Useful notes: 
-    # In spark 3, Iceberg tables use identifies that have 3 parts 
-    # iceberg_catalog_name.iceberg_namespace_name.iceberg_table_name
-    # Specific to BigLake Metastore, tables have 3 different identifiers
-    # iceberg_catalog_name.iceberg_database_name.iceberg_table_name
+    # namespace is a general programming concept with gives a context for identifiers [1] . 
+    # when talking about Spark, Iceberg, BLMS & BigQuery we need identifiers for tables
+    # In this environment, namespaces are used to organise tables.
+    # Spark, BigLake Metastore & BigQuery all use three-level namespaces.
+    # ==> Spark:     catalog.database.table
+    # ==> BLMS:      catalog.database.table
+    # ==> BigQuery:  project.dataset.table
+    #
+    # In Spark SQL, you can create namespaces & nest them to create multi-level namespaces
+    # CREATE NAMESPACE {}    ==> creates a catalog
+    # CREATE NAMESPACE {}.{} ==> nesting, creates 2-level namespace ....catalog.db
+    # CREATE TABLE {}.{}.{}  ==> nesting, creates 3-level namespace ....catalog.db.table
 
     # Create a catalog : https://cloud.google.com/bigquery/docs/manage-open-source-metadata#create_catalogs
     spark.sql("CREATE NAMESPACE IF NOT EXISTS `{}`;".format(args["iceberg_catalog_name"]))
 
-    # Create a namespace in catalog aka BLMS "Database" : https://cloud.google.com/bigquery/docs/manage-open-source-metadata#create_databases 
+    # Create a database : https://cloud.google.com/bigquery/docs/manage-open-source-metadata#create_databases 
     spark.sql("CREATE NAMESPACE IF NOT EXISTS `{}`.{};".format(args["iceberg_catalog_name"], args["iceberg_namespace_name"]))
 
     # Create an Iceberg table in Spark and automatically create a BigLake Iceberg table at the same time
