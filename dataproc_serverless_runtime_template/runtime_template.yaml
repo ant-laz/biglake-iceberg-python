@@ -12,7 +12,6 @@ jupyterSession:
 runtimeConfig:
   version: "2.2"
   properties:
-    "spark.app.name": "BLMS"
     "spark.sql.catalog.${ICEBERG_CATALOG_NAME}": "org.apache.iceberg.spark.SparkCatalog"
     "spark.sql.catalog.${ICEBERG_CATALOG_NAME}.catalog-impl": "org.apache.iceberg.gcp.biglake.BigLakeCatalog"
     "spark.sql.catalog.${ICEBERG_CATALOG_NAME}.gcp_project": "${PROJECT_ID}"
