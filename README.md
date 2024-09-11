@@ -569,6 +569,73 @@ Query the BigLake iceberg table using BIGQUERY
 SELECT * FROM ${PROJECT_ID}.${BIGQUERY_DATASET}.${BIGQUERY_TABLENAME} LIMIT 10;"
 ```
 
+### Approach C : Dataproc Serverless Runtime Template + Jupyter Notebook + BLMS
+
+### Approach C  - Overview
+
+![approach_c_architecture](images/approach_c.png)
+
+### Approach C  - setup
+
+create some environmental variables
+```
+export PROJECT_ID=$(gcloud config list core/project --format="value(core.project)")
+export CURRENT_USER=$(gcloud config list account --format "value(core.account)")
+export IAM_CUSTOM_ROLE_ID="CustomDelegate"
+export BIGQUERY_LOCATION="US"
+export GCS_LOCATION="US"
+export BIGQUERY_BIGLAKE_CONNECTION="biglake-connection"
+export GCS_BUCKET_LAKEHOUSE="gs://${PROJECT_ID}-iceberg-datalakehouse"
+export GCS_BUCKET_RAW_DATA="gs://${PROJECT_ID}-raw-data-parquet"
+export GCS_BUCKET_RAW_DATA_TBL="${GCS_BUCKET_RAW_DATA}/my_cars_tbl/"
+export LOCAL_DATA_LOCATION="data/mt_cars.parquet"
+export GCS_BUCKET_DATA_LOC="${GCS_BUCKET_RAW_DATA_TBL}*.parquet"
+export ICEBERG_CATALOG_NAME="my_datalakehouse_iceberg_catalog"
+export ICEBERG_NAMESPACE_NAME="iceberg_datasets"
+export BIGQUERY_DATASET="iceberg_datasets"
+export ICEBERG_TABLE_NAME="cars"
+export BIGQUERY_TABLENAME="cars"
+export SERVICE_ACCT="dataproc-driver-sa"
+export SERVICE_ACCT_FULL="${SERVICE_ACCT}@${PROJECT_ID}.iam.gserviceaccount.com"
+export DATA_PROC_REGION=us-central1
+export GCS_BUCKET_DATAPROC_DEPS="gs://${PROJECT_ID}-dataproc-deps"
+export ICEBERG_SPARK_PACKAGE=org.apache.iceberg:iceberg-spark-runtime-3.3_2.12:1.2.0
+export BIGLAKE_ICEBERG_CATALOG_JAR=gs://spark-lib/biglake/biglake-catalog-iceberg1.2.0-0.1.1-with-dependencies.jar
+export DATAPROC_RUNTIME=blmsdataprocruntime
+```
+
+enable apis
+```
+gcloud services enable iam.googleapis.com bigqueryconnection.googleapis.com biglake.googleapis.com cloudresourcemanager.googleapis.com dataproc.googleapis.com notebooks.googleapis.com
+```
+
+create a vertex ai workbench instance with dataproc enabled via these [instructions](https://cloud.google.com/vertex-ai/docs/workbench/instances/create-dataproc-enabled)
+
+create a dataproc serverless runtime template YAML config file by substituting the
+environmental variables (defined above) in this [template](dataproc_serverless_runtime_template/runtime_template.yaml)
+```
+envsubst < dataproc_serverless_runtime_template/runtime_template.yaml > dataproc_serverless_runtime_template/my_runtime.yaml
+```
+
+Use the created YAML file to actually create the dataproc serverless runtime template
+```
+gcloud beta dataproc session-templates import ${DATAPROC_RUNTIME} \
+  --source=my_runtime.yaml  \
+  --project=${PROJECT_ID}  \
+  --location=${DATA_PROC_REGION}
+```
+
+On the GCP console, click "OPEN JUPYTERLAB" button from the Vertex AI workbench instance.
+
+Upload the prepared Jupyter notebook presentd in this repo [here](jupyterlab_notebooks/demo_jupyterlab_blms_dataproc_pyspark.ipynb)
+
+Connect the Jupyter notebook to a kernel which is an instance of your dataproc
+serverless runtime template.
+
+Due to the configuration of the template, all the necessary spark config has been done
+in the dataproc serverless runtime template. The user of the notebook can then just
+focus on writing Spark code to interact with the Iceberg tables in BigLake Metastore.
+
 ### appendix :: manually deleting catalogs
 
 ```

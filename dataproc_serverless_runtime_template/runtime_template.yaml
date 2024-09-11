@@ -1,0 +1,23 @@
+# https://cloud.google.com/dataproc-serverless/docs/quickstarts/jupyterlab-sessions#create_a_serverless_runtime_template
+description: v4
+environmentConfig:
+  executionConfig:
+    serviceAccount: $SERVICE_ACCT_FULL
+    # Choose either networkUri or subnetworkUri
+    #networkUri: default
+    subnetworkUri: projects/$PROJECT_ID/regions/$DATA_PROC_REGION/subnetworks/default
+jupyterSession:
+  kernel: PYTHON
+  displayName: v4
+runtimeConfig:
+  version: "2.2"
+  properties:
+    "spark.app.name": "BLMS"
+    "spark.sql.catalog.${ICEBERG_CATALOG_NAME}": "org.apache.iceberg.spark.SparkCatalog"
+    "spark.sql.catalog.${ICEBERG_CATALOG_NAME}.catalog-impl": "org.apache.iceberg.gcp.biglake.BigLakeCatalog"
+    "spark.sql.catalog.${ICEBERG_CATALOG_NAME}.gcp_project": "${PROJECT_ID}"
+    "spark.sql.catalog.${ICEBERG_CATALOG_NAME}.gcp_location": "${BIGQUERY_LOCATION}"
+    "spark.sql.catalog.${ICEBERG_CATALOG_NAME}.blms_catalog": "${ICEBERG_CATALOG_NAME}"
+    "spark.sql.catalog.${ICEBERG_CATALOG_NAME}.warehouse": "${GCS_BUCKET_LAKEHOUSE}"
+    "spark.jars": "${BIGLAKE_ICEBERG_CATALOG_JAR}"
+    "spark.jars.packages": "${ICEBERG_SPARK_PACKAGE}"
