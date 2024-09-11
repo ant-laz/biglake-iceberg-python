@@ -374,6 +374,7 @@ the role `BigQuery Data Owner` on the Dataset `BIGQUERY_DATASET`.
 This unfortunatley cannot be done via command line tools easily.
 
 Enable our Cloud Resource connection to carry out operations.
+The Cloud Resource connection only needs read access to the GCS bucket as per [docs](https://cloud.google.com/bigquery/docs/create-cloud-resource-connection#access-storage)
 ```
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
   --member="serviceAccount:${BIGLAKE_SA}" \
@@ -381,7 +382,7 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} \
 
 gcloud storage buckets add-iam-policy-binding ${GCS_BUCKET_LAKEHOUSE} \
   --member="serviceAccount:${BIGLAKE_SA}" \
-  --role=roles/storage.objectAdmin
+  --role=roles/storage.objectViewer
 ```
 
 Use the BigQuery UI to allow the BigQuery Cloud Resource service account `BIGLAKE_SA` to have
